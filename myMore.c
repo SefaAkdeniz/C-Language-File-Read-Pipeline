@@ -17,10 +17,10 @@ int main(int argc, char *argv[])
 	int ppidValue = getppid();
 	sprintf(ppidIndex, "%d", ppidValue);
 
-	char *pidIndexParent = argv[2];
-	char *ppidIndexParent = argv[3];
+	char *pidIndexParent = argv[2];  // Parent üzerinden parametre olarak gönderilen pid id'ler alınır.
+	char *ppidIndexParent = argv[3]; // Process çalışan process id alınır.
 
-	if (strcmp(pidIndex, pidIndexParent) != 0 && strcmp(ppidIndex, ppidIndexParent) != 0)
+	if (strcmp(pidIndex, pidIndexParent) != 0 && strcmp(ppidIndex, ppidIndexParent) != 0)  // Parent ve child process id'ler kontrol edilir.
 	{
 		printf("myMore dosyasi parenti olmadan calisamaz...\n");
 	}
