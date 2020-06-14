@@ -1,15 +1,16 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include <string.h> // Gerekli Kütüphaneler
 #include <unistd.h>
 #include <termio.h>
-#include <sys/wait.h> // wait() Fonksiyonu Kütüphanesi
+#include <sys/wait.h> 
 
-#define BufferSize 500    // Satır çok uzun olduğunda konsol yada terminal satırı ikiye bölüyor. Eğer bu limitlemeyi kullanmazsak, satır sayısı artar ve bunu kontrol edemeyiz.
-#define MaxLineSize 250   // Dosyadaki maksimum satır sayısı
-#define PrintLineCount 24 // myMore ile basılacak satır sayısı
 #define READ 0
 #define WRITE 1
+#define PrintLineCount 24 // Basılacak satır sayısı
+#define BufferSize 500    // Limitlemeyi kullanmazsak, satır sayısı artar ve bunu kontrol edemeyiz.Satır çok uzun olduğunda terminal satırı ikiye bölüyor.
+#define MaxLineSize 250   // .txt max satır sayısı
+
 
 // Fonksiyonun amacı kullanıcının devam etmek için girdiği tuşu kontrol eder.
 int InputControl(void);
@@ -22,7 +23,7 @@ int main(int argc, char *argv[])
 {
    FILE *fp = OpenFile(argv[1]);
 
-   // Eğer girdi "./myData <filename> = myMore" ise dosyayı 24 satırlık parçalar halinde okur.
+   // Eğer girdi "./myData <filename> = myMore" ise dosyamızı 24'er satır satır okur.
    if (!strcmp(argv[2], "=") && !strcmp(argv[3], "myMore") && argc == 4)
    {
       char buffer[BufferSize];
@@ -35,30 +36,30 @@ int main(int argc, char *argv[])
          pid_t pid;
          int fd[2];
          pipe(fd);
-         pid = fork(); // Program çatallandırıldı.
+         pid = fork(); // Program fork methodu ile çatallandırıldı.
 
-         // Çatallandırma başarısız olursa buraya girecek.
+         // Çatallandırma başarısız olursa bu if koşuluna girecek ve hata verilecek.
          if (pid < 0)
          {
             fprintf(stderr, "Çatallandırma başarısız oldu.");
             return 1;
          }
 
-         // Parent Process
-         if (pid > 0)
+         
+         if (pid > 0)      // Parent Process
          {
-            int lineCount = 0; // Bu değişken kaç satır okunduğunu tutar.
+            int lineCount = 0; // Değişkenimiz kaç satır okunduğu bilgisini tutar.
 
-            //24 satır okur eğer 24 satırdan daha az kaldıysa tamamını okur.
+            //24 satır okuruz eğer verimiz 24 satırdan daha az kaldıysa kalan verimizin tamamını okur.
             for (int i = 0; i < PrintLineCount; ++i)
             {
-               // Satırları okur
+               // Satırlarımızı okur
                if (fgets(buffer, sizeof(buffer), fp) > 0)
                {
                   strcpy(writeMessage[i], buffer);
                   lineCount++;
                }
-               // Dosya okuma bittiyse döngüden çıkar
+               // Dosyada veri kalmadıysa ve okuma bittiyse döngüden çıkar
                else
                {
                   isReadEnd = 1;
@@ -73,8 +74,7 @@ int main(int argc, char *argv[])
             wait(NULL);
          }
 
-         // Child Process
-         if (pid == 0)
+         if (pid == 0)     // Child Process
          {
             close(fd[WRITE]);
 
@@ -82,18 +82,18 @@ int main(int argc, char *argv[])
             sprintf(read_pipe, "%d", fd[READ]);
 
             char pid_index[10];
-            char ppid_index[10];
-            //olusturulan processin pid ve ppid degerlerini aliyoruz
-            int pidDegeri = getpid();
+            char ppid_index[10];  
+           
+            int pidDegeri = getpid();   // olusturulan processimizin pid ve ppid degerlerini aliyoruz
             int ppidDegeri = getppid();
-            //alinan degerleri sprintf yardimi ile icine yazdiriyoruz
-            sprintf(pid_index, "%d", pidDegeri);
+
+            sprintf(pid_index, "%d", pidDegeri);              //alinan degerleri sprintf yardimi ile icine yazdiriyoruz
             sprintf(ppid_index, "%d", ppidDegeri);
 
-            char *arguments[5] = {argv[3], read_pipe, pid_index, ppid_index, NULL}; // Bu değişken myMore programına gönderilecek olan parametrelerin dizisini tutar.
+            char *arguments[5] = {argv[3], read_pipe, pid_index, ppid_index, NULL}; // Bu değişken myMore Bloğuna gönderilecek olan parametrelerin dizisini tutar.
 
-            // Execv fonksiyonu ile myMore'u çalıştırırız.
-            if (execv(argv[3], arguments) == -1)
+            
+            if (execv(argv[3], arguments) == -1)  // Execv fonksiyonu yardımıyla  myMore'u bloğunu çalıştırırız.
             {
                perror("myMore programı çalıştırılamadı.");
                return -1;
@@ -102,10 +102,9 @@ int main(int argc, char *argv[])
 
          inputGetChar = InputControl(); //Kullanıcının girdisi
 
-      } while (isReadEnd != 1 && inputGetChar != 'q');
+      } while (isReadEnd != 1 && inputGetChar != 'q');  // Dosyada veri bittiyse yadq "q" basıldıysa döngüden çıkılır.
    }
-   // Eğer girdi "./myData <filename>" ise bütün dosyayı okur.
-   else if (argc == 2)
+   else if (argc == 2)    // Eğer girdi "./myData <filename>" ise bütün dosyayı okur.
    {
       ReadFile(fp);
    }
@@ -118,7 +117,7 @@ int main(int argc, char *argv[])
    return 0;
 }
 
-// Fonksiyonun amacı kullanıcının devam etmek için girdiği tuşu kontrol eder. MacOS'da termios.h, Linux'da termio.h kütüphaneleri bu fonksiyon için kullanılır.
+// Fonksiyonun amacı kullanıcının devam etmek için girdiği tuşu kontrol eder. Linux'da termio.h kütüphaneleri bu fonksiyon için kullanılır.
 int InputControl(void)
 {
    struct termios oldattr, newattr;
